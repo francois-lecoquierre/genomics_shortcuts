@@ -1,0 +1,27 @@
+' définition des paramètres
+col_transcript = 9
+col_cnomen = 10
+UCSC_user = "francois.leco"
+UCSC_session = "session1"
+
+' en préparation de la boucle : on trouve la dernière cellule de la colonne du c.
+dern_rangee = Cells(Rows.Count, col_cnomen).End(xlUp).Row
+
+
+
+
+'on lance la boucle sur chaque variant du fichier **************************************************************************************************
+For rangee = 2 To dern_rangee 'dans cette boucle for, les actions sont réalisées ligne par ligne
+    
+    'on récupère le transcrit que l'on modifie pour enlever le point et ce qu'il y a après, ainsi que le cnomen
+    transcrit = Cells(rangee, col_transcript)
+    transcrit_sans_version = Left(transcrit, InStr(transcrit, ".") - 1)
+    cnomen = Cells(rangee, col_cnomen)
+    
+    'on génère l'URL cible de la ligne
+    url_cible = "http://genome-euro.ucsc.edu/cgi-bin/hgTracks?hgS_doOtherUser=submit&hgS_otherUserName=" & UCSC_user & "&hgS_otherUserSessionName=" & UCSC_session & "&position=" & transcrit_sans_version & ":" & cnomen
+    
+    'on ajoute l'URL dans la cellule du c.
+    ActiveSheet.Hyperlinks.Add Anchor:=Cells(rangee, col_cnomen), Address:=url_cible, TextToDisplay:=cnomen
+    
+Next rangee 'on passe à la ligne suivante **********************************************************************************************************
