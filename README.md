@@ -11,8 +11,6 @@ Video demo:
 https://www.youtube.com/watch?v=U-eH46hVKnM
 
 <br>
-<br>
-<br>
 
 ## gleaves_to_external_resources.xlsm
 This unofficial tool is used for variant interpretation on the Gleaves variant interface from Seqoia lab in France.
