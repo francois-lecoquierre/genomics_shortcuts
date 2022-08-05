@@ -9,3 +9,15 @@ This tool parses a VCF file, shows each variant one by one on IGV and displays a
 Video demo:
 <br>
 https://www.youtube.com/watch?v=U-eH46hVKnM
+
+<br>
+<br>
+<br>
+
+## gleaves_to_external_resources.xlsm
+This unofficial tool is used for variant interpretation on the Gleaves variant interface from Seqoia lab in France.
+It generates links to variant and gene resources from the clipboard.
+<br>
+Video demo:
+<br>
+https://www.youtube.com/watch?v=nCqUt54V838
