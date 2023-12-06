@@ -1,4 +1,4 @@
-  
+
 import pandas as pd
 import easygui
 import matplotlib.pyplot as plt
@@ -77,49 +77,61 @@ def rename_conditions_and_get_a_title(df):
 
 
 def plot_counts(df, figure_title):
-    color_dict = {"tp": "#2adf59", "fp": "#f56e85", "fn": "#2a98df"}
-    # Fonction pour créer un subplot
-    def create_subplot(ax, df, snv_or_indel, interpretation_values, plot_label, display_legend_bool):
-        df = df[df["type"] == snv_or_indel][interpretation_values]
-        # pour chaque colonne de la dataframe, on fait un barplot empilé
-        # on inverse l'ordre des colonnes pour que les barres soient empilées dans le bon ordre
-        df = df.iloc[:, ::-1]
-        for i, v in enumerate(df.columns):
-            # i is the index of the column, v is the name of the column (= the interpretation)
-            # on fait un barplot empilé pour chaque colonne
-            ax.bar(df.index, df[v], bottom=df.iloc[:, :i].sum(axis=1), label=v, color=color_dict[v])
-            # on ajoute le nombre de variants au milieu de chaque sous barre
-            for index, value in enumerate(df[v]):
-                # calculer la position y pour le texte au milieu de la barre empilée
-                y_position = df.iloc[:, :i].sum(axis=1).values[index] + value / 2
-                ax.text(index, y_position, str(value), ha="center", va="center")
-        if display_legend_bool:
-            ax.legend()
-        ax.set_title(plot_label)
-        ax.set_ylabel("count")
-        # background color is light grey
-        # ax.set_facecolor("#eaeaf2")
-    # Création de la figure et des sous-graphiques, ajout d'un titre et de la légende unique en bas de la figure
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(13, 10))
+    # back colors are slightly lighter than the front colors
+    color_dict = {"tp": "#2adf59", "fp": "#f56e85", "fn": "#2a98df", "tp_back": "#a7f5c2", "fp_back": "#f5b7c2", "fn_back": "#a7d5f5"}
+    # création de la figure : deux sous graphiques, un pour les SNVs et un pour les indels
+    # la partie positive du barplot correpond aux vrais variants (tp et fn), la partie négative aux faux variants (fp)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 7))
     fig.suptitle(figure_title, fontsize=16)
-    # Appel de la fonction create_subplot pour chaque sous-graphique
-    create_subplot(ax1, df, "SNVs", ["fp"], "SNVs false variants", False)
-    create_subplot(ax2, df, "indels", ["fp"], "Indels false variants", False)
-    create_subplot(ax3, df, "SNVs", ["fn", "tp"], "SNVs true variants", False)
-    create_subplot(ax4, df, "indels", ["fn", "tp"], "Indels true variants", False)
-    # ajout de la légende
+    # création des subplots pour les SNVs et les indels
+    
+    for i, snv_or_indel in enumerate(["SNVs", "indels"]):
+        # get the dataframe with only snvs or indels
+        df_snvs = df[df["type"] == snv_or_indel]
+        # plot the false positives
+        # false positive values are converted to negative values
+        ax = [ax1, ax2][i]
+        ax.bar(df_snvs.index, -df_snvs["fp"], color=color_dict["fp"])
+        # plot the true positives, starting from 0
+        ax.bar(df_snvs.index, df_snvs["tp"], bottom=0, color=color_dict["tp"])
+        # plot the false negatives, starting from the top of the true positives
+        ax.bar(df_snvs.index, df_snvs["fn"], bottom=df_snvs["tp"], color=color_dict["fn"])
+        # compute the position of the text labels
+        # tp labels are at half of the tp value
+        # fn labels are at tp value + half of the fn value
+        # fp labels are at 0 - half of the fp value
+
+        for index, row in df_snvs.iterrows():
+            tp = row["tp"]
+            fn = row["fn"]
+            fp = row["fp"]
+            # add the text labels
+            ax.text(index, tp/2, tp, ha="center", va="center", bbox=dict(boxstyle="round", facecolor=color_dict["tp_back"], edgecolor="black", linewidth=1))
+            ax.text(index, tp + fn/2, fn, ha="center", va="center", bbox=dict(boxstyle="round", facecolor=color_dict["fn_back"], edgecolor="black", linewidth=1))
+            ax.text(index, -fp/2, fp, ha="center", va="center", bbox=dict(boxstyle="round", facecolor=color_dict["fp_back"], edgecolor="black", linewidth=1))
+
+
+        # add a horizontal line at 0
+        ax.axhline(y=0, color="black", linestyle="--")
+        # add a title
+        ax.set_title(f"{snv_or_indel} counts")
+        # add a ylabel
+        ax.set_ylabel("counts")
+    # add a legend
     legend_elements = [plt.Rectangle((0, 0), 1, 1, color=color_dict["fp"], label="false positives"),
                             plt.Rectangle((0, 0), 1, 1, color=color_dict["tp"], label="true positives"),
                             plt.Rectangle((0, 0), 1, 1, color=color_dict["fn"], label="false negatives")]
-    fig.subplots_adjust(bottom=0.2)
+    fig.subplots_adjust(bottom=0.3)
     fig.legend(handles=legend_elements, loc='lower center', ncol=3)
-    fig.tight_layout(rect=[0, 0.035, 1, 1])
+    # let a margin below the figure for the legend
+    fig.tight_layout(rect=[0, 0.06, 1, 1])
     filename = "counts.png"
+    # save the figure
     print(f"Saving counts plot : counts.png")
     plt.savefig(filename)
 
 
-def plot_recall_precision_or_f1_score(df, figure_title, recall_or_precision, color):
+def plot_recall_precision_or_f1_score(df, figure_title, recall_or_precision, color, color_back):
     # verify that recall_or_precision is either "recall" or "precision"
     if recall_or_precision not in ["recall", "precision", "f1_score"]:
         raise ValueError("recall_or_precision must be either 'recall', 'precision' or 'f1_score'")
@@ -137,9 +149,9 @@ def plot_recall_precision_or_f1_score(df, figure_title, recall_or_precision, col
         title = (f"{snv_or_indel} {recall_or_precision}").replace("records", "SNVs and indels")
         ax.set_title(title)
         ax.set_ylabel(recall_or_precision)
-        # for each plot, add counts at half the height of the bars, with three decimals
+        # for each plot, add counts at half the height of the bars, with three decimals, use the background color
         for p in ax.patches:
-            ax.annotate(str(round(p.get_height(), 4)), (p.get_x() + p.get_width() / 2, p.get_height()/2), ha='center', va='center')
+            ax.annotate(str(round(p.get_height(), 4)), (p.get_x() + p.get_width() / 2., p.get_height()/2), ha="center", va="center", xytext=(0, 10), textcoords='offset points', bbox=dict(boxstyle="round", facecolor=color_back, edgecolor="black", linewidth=1))
         # for each plot, add a horizontal line at 1
         ax.axhline(y=1, color="black", linestyle="--")
     
@@ -150,13 +162,14 @@ def plot_recall_precision_or_f1_score(df, figure_title, recall_or_precision, col
 
 
 files_list = easygui.fileopenbox(msg="Select the files to compare", title="Select files", multiple=True)
+# files_list=["/home/adm-loc/Documents/Programmes/python/data_happy/results_onco/onco_DV.stats.csv", "/home/adm-loc/Documents/Programmes/python/data_happy/results_onco/onco_HC.stats.csv"]
 df = generate_df(files_list)
 df, experiment_title=rename_conditions_and_get_a_title(df)
 
 plot_counts(df, experiment_title)
-plot_recall_precision_or_f1_score(df, experiment_title, "recall", "orange")
-plot_recall_precision_or_f1_score(df, experiment_title, "precision", "#a7a6e7")
-plot_recall_precision_or_f1_score(df, experiment_title, "f1_score", "#2adf59")
+plot_recall_precision_or_f1_score(df, experiment_title, "recall", "orange", "#f5d7a7")
+plot_recall_precision_or_f1_score(df, experiment_title, "precision", "#a7a6e7", "#a7d5f5")
+plot_recall_precision_or_f1_score(df, experiment_title, "f1_score", "#2adf59", "#a7f5c2")
 
 
 
