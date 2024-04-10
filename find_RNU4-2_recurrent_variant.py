@@ -1,7 +1,6 @@
 
 
 # find_RNU4-2_recurrent_variant.py [-bam <path to bam file> | -bam_list <path to bam file list>] -genome <genome version> -output_prefix <output prefix>
-# require an unix OS with bcftools to run the mpileup
 
 import argparse
 import os
@@ -36,7 +35,7 @@ def check_args(args):
 
 
 def get_chr12_from_bam(bam_file):
-    # we chec in the header if chr12 is noted as chr12 or 12
+    # we check in the header if chr12 is noted as chr12 or 12
     header = subprocess.check_output(['samtools', 'view', '-H', bam_file]).decode('utf-8')
     if 'chr12' in header:
         return 'chr12'
@@ -74,10 +73,16 @@ class sample:
             output = subprocess.check_output(command).decode('utf-8')
         except subprocess.CalledProcessError:
             print('Error: samtools mpileup failed for {}'.format(self.bam_file))
-            self.has_coverage = False
+            self.count = 'Mpileup_failed'
+            self.bases = 'Mpileup_failed'
+            self.qual = 'Mpileup_failed'
+            self.has_coverage = 'Mpileup_failed'
             return
         if not output:
             self.has_coverage = False
+            self.count = 'No_coverage'
+            self.bases = 'No_coverage'
+            self.qual = 'No_coverage'
             return
         else:
             self.has_coverage = True
@@ -131,3 +136,4 @@ with open(output_file, 'w') as f:
 print('Output written to {}'.format(output_file))
 
     
+
