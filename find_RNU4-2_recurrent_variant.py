@@ -70,7 +70,12 @@ class sample:
 
     def get_mpileup(self):
         command=['samtools', 'mpileup', '-r', '{}:{}-{}'.format(self.chr, self.pos, self.pos), self.bam_file]
-        output = subprocess.check_output(command).decode('utf-8')
+        try:
+            output = subprocess.check_output(command).decode('utf-8')
+        except subprocess.CalledProcessError:
+            print('Error: samtools mpileup failed for {}'.format(self.bam_file))
+            self.has_coverage = False
+            return
         if not output:
             self.has_coverage = False
             return
