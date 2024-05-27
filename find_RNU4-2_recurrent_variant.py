@@ -98,7 +98,7 @@ class sample:
     def get_carrier_status(self):
         # if the bases contains "+1A" then the sample is a carrier
         if self.bases:
-            if '+1A' in self.bases:
+            if '+1A' in self.bases or '+1a' in self.bases:
                 self.carrier = True
             else:
                 self.carrier = False
