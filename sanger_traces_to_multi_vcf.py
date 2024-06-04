@@ -108,7 +108,7 @@ tmp_folder = output_folder + "tmp/"
 if not os.path.exists(tmp_folder):
     os.makedirs(tmp_folder)
 output_prefix = enterbox("Entrez le préfixe du fichier de sortie", "Préfixe du fichier de sortie", "output")
-output_multi_vcf = output_folder + output_prefix + "_multi.vcf"
+output_multi_vcf = output_folder + "/" + output_prefix + "_multi.vcf"
 
 # variables fixes
 indigo = "/home/adm-loc/Documents/Programmes/indigo/indigo/indigo.sh"
