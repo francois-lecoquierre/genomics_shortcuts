@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 
 import pandas as pd
 import easygui
@@ -34,9 +36,9 @@ def generate_df(files_list):
     df = pd.DataFrame()
     for file in files_list:
         if file.split(".")[-1] == "csv":
-            df = df.append(parse_stats_csv_to_pandas(file))
+            df = pd.concat([df, parse_stats_csv_to_pandas(file)])
         elif file.split(".")[-1] == "xlsx":
-            df = df.append(parse_stats_xl_to_pandas(file))
+            df = pd.concat([df, parse_stats_xl_to_pandas(file)])
         else:
             raise ValueError("Extension of the files must be either .csv or .xlsx")
     df = add_f1_score(df)
@@ -125,9 +127,10 @@ def plot_counts(df, figure_title):
     fig.legend(handles=legend_elements, loc='lower center', ncol=3)
     # let a margin below the figure for the legend
     fig.tight_layout(rect=[0, 0.06, 1, 1])
-    filename = "counts.png"
+
+    filename = figure_title.replace(" ", "_") + "_counts.png"
     # save the figure
-    print(f"Saving counts plot : counts.png")
+    print(f"Saving counts plot : {filename}")
     plt.savefig(filename)
 
 
@@ -156,8 +159,17 @@ def plot_recall_precision_or_f1_score(df, figure_title, recall_or_precision, col
         ax.axhline(y=1, color="black", linestyle="--")
     
     # save the figure
-    print(f"Saving {recall_or_precision} plot : {recall_or_precision}.png")
-    plt.savefig(f"{recall_or_precision}.png")
+    filename_prefix=figure_title.replace(" ", "_")
+    print(f"Saving {recall_or_precision} plot : filename_prefix_{recall_or_precision}.png")
+    plt.savefig(f"{filename_prefix}_{recall_or_precision}.png")
+
+
+
+
+def save_table(df, figure_title):
+    filename = figure_title.replace(" ", "_") + "_table.csv"
+    print(f"Saving table : {filename}")
+    df.to_csv(filename)
 
 
 
@@ -170,6 +182,8 @@ plot_counts(df, experiment_title)
 plot_recall_precision_or_f1_score(df, experiment_title, "recall", "orange", "#f5d7a7")
 plot_recall_precision_or_f1_score(df, experiment_title, "precision", "#a7a6e7", "#a7d5f5")
 plot_recall_precision_or_f1_score(df, experiment_title, "f1_score", "#2adf59", "#a7f5c2")
+save_table(df, experiment_title)
+
 
 
 
