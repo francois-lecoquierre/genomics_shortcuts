@@ -1,12 +1,12 @@
-import tkinter as tk
-from tkinter import messagebox
-import pyperclip # pip install pyperclip
-from pynput import keyboard # pip install pynput
 
 # takes the paperclip as an input, either from multi-line text or excel cells
 # creates a list of strings (lines or cells) and displays the list in a tkinter interface
 # detects when one element has been pasted (cmd + V), and moves to the next element
 
+import tkinter as tk
+from tkinter import messagebox
+import pyperclip
+from pynput import keyboard
 
 
 class ClipboardToListApp:
@@ -22,9 +22,13 @@ class ClipboardToListApp:
         self.current_index = 0
         self.cmd_pressed = False  # Track the state of the Cmd key
 
-        # Create a Listbox to display strings
-        self.listbox = tk.Listbox(root, selectmode=tk.SINGLE, width=50, height=20)
+        # Create a Listbox to display strings (read-only behavior)
+        self.listbox = tk.Listbox(root, selectmode=tk.SINGLE, width=50, height=20, exportselection=False)
         self.listbox.pack(pady=10)
+
+        # Allow selection changes via mouse or keyboard
+        self.listbox.bind('<<ListboxSelect>>', self.on_selection_change)
+        self.listbox.bind('<Key>', lambda e: "break")  # Prevent direct keyboard interactions
 
         # Load clipboard data into the listbox
         self.load_clipboard()
@@ -42,8 +46,10 @@ class ClipboardToListApp:
         try:
             # Read clipboard content
             clipboard_content = pyperclip.paste()
-            rows = clipboard_content.split('\n')
-            self.data_list = [cell.strip() for row in rows for cell in row.split('\t') if cell.strip()]
+            rows = [row.split('\t') for row in clipboard_content.split('\n') if row.strip()]
+
+            # Flatten the 2D list into a single list (row by row, cell by cell)
+            self.data_list = [cell.strip() for row in rows for cell in row if cell.strip()]
 
             # Populate the listbox
             self.listbox.delete(0, tk.END)  # Clear any existing entries
@@ -56,6 +62,13 @@ class ClipboardToListApp:
                 self.listbox.activate(0)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load clipboard content: {e}")
+
+    def on_selection_change(self, event):
+        """Update the current index when the selection changes."""
+        try:
+            self.current_index = self.listbox.curselection()[0]
+        except IndexError:
+            pass  # Ignore if no selection is available
 
     def on_key_press(self, key):
         """Handle key press events."""
@@ -78,23 +91,22 @@ class ClipboardToListApp:
     def handle_paste(self):
         """Handle the paste action to update the list."""
         if self.current_index < len(self.data_list):
-            # Get the clipboard content
-            pasted_text = pyperclip.paste().strip()
+            # Get the current list item to paste
+            current_text = self.data_list[self.current_index]
 
-            # Update the current list item
-            self.data_list[self.current_index] = pasted_text
-            self.listbox.delete(self.current_index)
-            self.listbox.insert(self.current_index, pasted_text)
+            # Set clipboard content to the current list item
+            self.set_clipboard(current_text)
 
-            # Move to the next item
+            # Perform the paste action (e.g., in another application)
+            print(f"Pasting: {current_text}")  # Debugging
+
+            # Move to the next item after the paste
             self.current_index += 1
             if self.current_index < len(self.data_list):
+                # Highlight the next item
                 self.listbox.select_clear(0, tk.END)
                 self.listbox.select_set(self.current_index)
                 self.listbox.activate(self.current_index)
-                self.listbox.see(self.current_index)  # Ensure visibility
-                # Update clipboard to the next item
-                self.set_clipboard(self.data_list[self.current_index])
             else:
                 # If the last item is reached, show a message
                 self.listbox.select_clear(0, tk.END)
@@ -110,6 +122,7 @@ class ClipboardToListApp:
         """Stop the listener when closing the app."""
         self.listener.stop()
         self.root.destroy()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
