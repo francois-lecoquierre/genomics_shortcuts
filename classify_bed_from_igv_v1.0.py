@@ -97,23 +97,17 @@ class MainWindow(ttk.Frame):
         button_backward = Button(buttons_panel, text='<', command=lambda:self.backward())
         button_backward.grid(row=1, column=1)
         button_forward = Button(buttons_panel, text='>', command=lambda:self.forward())
-        button_forward.grid(row=1, column=len(buttons_list) + 2)
+        button_forward.grid(row=1, column=len(buttons_colors) + 2)
         button_stats = Button(buttons_panel, text='Export results', command=lambda:self.stats())
-        button_stats.grid(row=1, column=len(buttons_list) + 3)
+        button_stats.grid(row=1, column=len(buttons_colors) + 3)
         grid_pos = 1
-        for button_text in buttons_list:
+        for button_text, button_color in buttons_colors.items():
             grid_pos += 1
             btn = tk.Button(buttons_panel, text=button_text)
             btn.config(command= lambda t=button_text, btn = btn: self.custom_button_click(t))
             btn.grid(row=1, column=grid_pos)
-            if button_text == "True positive":
-                btn.config(background="#2ecc71")
-            if button_text == "False positive":
-                btn.config(background="#ec7063")
-            if button_text == "Other":
-                btn.config(background="#f4d03f")
-            if button_text == "?":
-                btn.config(background="#2980b9")
+            btn.config(background=button_color)
+            btn.config(foreground="black")
 
     def update_info_field(self):
         self.master.title('Variant : ' + str(variant_number + 1) + "/" + str(len(variants)))
@@ -159,7 +153,7 @@ class MainWindow(ttk.Frame):
 
     def stats(self):
         # Export the variants to a file
-        classif_categories = buttons_list
+        classif_categories = buttons_colors.keys()
         print("Exporting variants to files...")
         for classification in classif_categories:
             export_filename = classification + "_variants.tsv"
@@ -177,7 +171,14 @@ class MainWindow(ttk.Frame):
 
 bed_file = get_bed_argument()
 
-buttons_list = ["True positive", "?", "Other", "False positive"]
+# buttons_list = ["True positive", "?", "Other", "False positive"]
+# we try a dict with the buttons and their colors
+buttons_colors = {
+    "True positive": "#2ecc71",
+    "False positive": "#ec7063",
+    "Other": "#f4d03f",
+    "?": "#2980b9"
+}
 
 variants = parse_bed_file(bed_file) # Format 
 variant_number = 0
